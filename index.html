@@ -1,0 +1,1875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ISRO Space Mission Expenditure & Satellite Launch Management System (ISRO-SMS)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            space: {
+              950: '#030712',
+              900: '#0b1120',
+              850: '#0f172a',
+              800: '#1e293b',
+              700: '#334155',
+              cyan: '#06b6d4',
+              orange: '#f97316',
+              emerald: '#10b981',
+              violet: '#8b5cf6',
+              amber: '#f59e0b'
+            }
+          },
+          fontFamily: {
+            sans: ['"Inter"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #030712; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f97316; }
+
+    .grid-pattern {
+      background-size: 28px 28px;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="bg-space-950 text-slate-200 font-sans antialiased h-screen flex overflow-hidden selection:bg-orange-500 selection:text-black">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside id="sidebar" class="w-64 bg-space-900 border-r border-slate-800/80 flex flex-col justify-between shrink-0 z-30 transition-all duration-300 select-none">
+    <div>
+      <!-- Brand & Emblem Header -->
+      <div class="h-16 flex items-center px-5 gap-3 border-b border-slate-800/90 bg-space-950/40">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 via-amber-500 to-cyan-500 p-0.5 flex items-center justify-center shadow-lg shadow-orange-900/30">
+          <div class="w-full h-full bg-space-900 rounded-[10px] flex items-center justify-center text-orange-400">
+            <i data-lucide="rocket" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-white tracking-wider text-sm">ISRO-SMS</span>
+            <span class="text-[9px] px-1 py-0.2 rounded font-mono font-bold bg-orange-950 text-orange-400 border border-orange-800">DOS</span>
+          </div>
+          <span class="text-[10px] block text-slate-400 font-mono">Space DBMS Analytics</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="p-3 space-y-1.5 mt-2">
+        <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs transition bg-orange-950/60 text-orange-400 border border-orange-700/40">
+          <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          <span>Expenditure Dashboard</span>
+        </button>
+
+        <button onclick="switchView('missions')" id="nav-missions" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs transition text-slate-400 hover:bg-slate-800/60 hover:text-white">
+          <i data-lucide="satellite" class="w-4 h-4 text-cyan-400"></i>
+          <span>Space Flight Missions</span>
+          <span id="badge-mission-count" class="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800/60 font-mono">0</span>
+        </button>
+
+        <button onclick="switchView('vehicles')" id="nav-vehicles" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs transition text-slate-400 hover:bg-slate-800/60 hover:text-white">
+          <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+          <span>Launch Vehicle Fleet</span>
+        </button>
+
+        <button onclick="switchView('centers')" id="nav-centers" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs transition text-slate-400 hover:bg-slate-800/60 hover:text-white">
+          <i data-lucide="building" class="w-4 h-4 text-emerald-400"></i>
+          <span>ISRO Space Centers</span>
+        </button>
+
+        <button onclick="switchView('allocations')" id="nav-allocations" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs transition text-slate-400 hover:bg-slate-800/60 hover:text-white">
+          <i data-lucide="history" class="w-4 h-4 text-violet-400"></i>
+          <span>1969–Present Budgets</span>
+        </button>
+
+        <div class="pt-4 pb-1 px-3">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500 font-mono">DBMS Submission Engine</p>
+        </div>
+
+        <button onclick="switchView('sql')" id="nav-sql" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs transition text-slate-400 hover:bg-slate-800/60 hover:text-white">
+          <i data-lucide="terminal" class="w-4 h-4 text-orange-400"></i>
+          <span>SQL Query Studio</span>
+          <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-orange-900/40 text-orange-300 font-mono border border-orange-800">EXEC</span>
+        </button>
+
+        <button onclick="switchView('schema')" id="nav-schema" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs transition text-slate-400 hover:bg-slate-800/60 hover:text-white">
+          <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i>
+          <span>Schema & ER Diagrams</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- LocalStorage Footnote -->
+    <div class="p-3 border-t border-slate-800/90 bg-space-950/60 text-xs">
+      <div class="bg-space-850/80 rounded-xl p-3 border border-slate-700/60 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-slate-400 text-[11px]">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Relational Store</span>
+          </div>
+          <span class="font-mono text-[10px] text-orange-400">5 Tables (3NF)</span>
+        </div>
+        <p class="text-[10px] text-slate-400 leading-tight">In-Memory Engine with LocalStorage sync.</p>
+        <button onclick="resetDataset()" class="w-full text-center text-[10px] py-1 text-slate-400 hover:text-orange-400 border border-slate-700/80 hover:border-orange-400/40 rounded-lg transition font-mono">
+          ↺ Reset to Default Dataset
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN CONTENT AREA ================= -->
+  <main class="flex-1 flex flex-col overflow-hidden bg-space-950 relative grid-pattern">
+
+    <!-- Top App Bar -->
+    <header class="h-16 bg-space-900/90 backdrop-blur border-b border-slate-800 px-6 flex items-center justify-between z-20 shrink-0">
+      <div class="flex items-center gap-4">
+        <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg text-slate-400 hover:bg-slate-800">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <div>
+          <h1 id="topbar-title" class="text-base font-bold text-white flex items-center gap-2">
+            Indian Space Research Organisation (ISRO) Mission & Budget Management System
+          </h1>
+          <p id="topbar-sub" class="text-xs text-slate-400 font-mono">Department of Space (DoS) • Missions & Launch Vehicle Telemetry (1969–2026)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5">
+        <button onclick="openModal('modal-mission')" class="inline-flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition shadow-lg shadow-orange-950">
+          <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+          <span>Log Flight Mission</span>
+        </button>
+        <button onclick="openModal('modal-vehicle')" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition shadow-lg shadow-cyan-950">
+          <i data-lucide="rocket" class="w-3.5 h-3.5"></i>
+          <span>Register Vehicle</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Workspace -->
+    <div id="content-scrollable" class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- ================= 1. EXPENDITURE DASHBOARD ================= -->
+      <section id="view-dashboard" class="space-y-6">
+        <!-- Metric Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Card 1 -->
+          <div class="bg-space-900/80 rounded-2xl p-5 border border-slate-800 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Current FY DoS Budget</p>
+                <h3 id="stat-latest-budget" class="text-2xl font-black text-white mt-1 font-mono">₹13,000 Cr</h3>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-orange-950 text-orange-400 border border-orange-800/60 flex items-center justify-center">
+                <i data-lucide="wallet" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="mt-3 flex items-center text-xs text-slate-400 gap-1.5 font-mono">
+              <span class="text-emerald-400 font-semibold">~0.04% of GDP</span>
+              <span>•</span>
+              <span class="text-slate-400">Global Efficiency Leader</span>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="bg-space-900/80 rounded-2xl p-5 border border-slate-800 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Launch Success Rate</p>
+                <h3 id="stat-success-rate" class="text-2xl font-black text-emerald-400 mt-1 font-mono">92.8%</h3>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-800/60 flex items-center justify-center">
+                <i data-lucide="check-check" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="mt-3 flex items-center text-xs text-emerald-400/90 gap-1 font-mono">
+              <i data-lucide="award" class="w-3.5 h-3.5"></i>
+              <span>High Reliability PSLV/LVM3 Tier</span>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="bg-space-900/80 rounded-2xl p-5 border border-slate-800 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Total Program Outlay</p>
+                <h3 id="stat-total-mission-val" class="text-2xl font-black text-white mt-1 font-mono">₹18,450 Cr</h3>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-cyan-950 text-cyan-400 border border-cyan-800/60 flex items-center justify-center">
+                <i data-lucide="sparkles" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="mt-3 flex items-center text-xs text-slate-400 gap-1 font-mono">
+              <span id="stat-missions-count" class="text-cyan-400 font-semibold">12</span>
+              <span>recorded flagship missions</span>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="bg-space-900/80 rounded-2xl p-5 border border-slate-800 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Foreign Satellites Deployed</p>
+                <h3 id="stat-foreign-satellites" class="text-2xl font-black text-amber-300 mt-1 font-mono">432+</h3>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-amber-950 text-amber-400 border border-amber-800/60 flex items-center justify-center">
+                <i data-lucide="globe" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="mt-3 flex items-center text-xs text-slate-400 gap-1 font-mono">
+              <span class="text-amber-400 font-semibold">NSIL Forex</span>
+              <span>Commercial launch customer revenue</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Chart 1: Historical Timeline -->
+          <div class="lg:col-span-2 bg-space-900/90 rounded-2xl p-5 border border-slate-800 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div>
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <i data-lucide="line-chart" class="w-4 h-4 text-orange-400"></i>
+                  Space Budget Growth (1969 to Present)
+                </h3>
+                <p class="text-[11px] text-slate-400 font-mono">Milestones: Aryabhata (1975), Chandrayaan-1 (2008), Mangalyaan (2013), Gaganyaan Era</p>
+              </div>
+              <div class="flex items-center gap-2 text-xs font-mono">
+                <button onclick="setHistoricalChartScale('logarithmic')" id="btn-scale-log" class="px-2.5 py-1 rounded bg-orange-950 text-orange-400 border border-orange-800 text-[11px]">Log Scale</button>
+                <button onclick="setHistoricalChartScale('linear')" id="btn-scale-linear" class="px-2.5 py-1 rounded bg-slate-800 text-slate-400 text-[11px]">Linear</button>
+              </div>
+            </div>
+            <div class="h-72">
+              <canvas id="historicalSpendChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 2: Budget Breakdown -->
+          <div class="bg-space-900/90 rounded-2xl p-5 border border-slate-800 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <i data-lucide="pie-chart" class="w-4 h-4 text-cyan-400"></i>
+                  Budget Allocation Split
+                </h3>
+              </div>
+              <p class="text-[11px] text-slate-400 font-mono mb-4">Space Technology vs Satellite Applications vs Science</p>
+              <div class="h-52 flex items-center justify-center">
+                <canvas id="budgetBreakdownChart"></canvas>
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800 grid grid-cols-3 gap-1 text-center font-mono text-[10px]">
+              <div class="bg-space-950 p-2 rounded border border-slate-800">
+                <span class="text-orange-400 font-bold block">62.0%</span>
+                <span class="text-slate-400">Launch Tech</span>
+              </div>
+              <div class="bg-space-950 p-2 rounded border border-slate-800">
+                <span class="text-cyan-400 font-bold block">26.0%</span>
+                <span class="text-slate-400">Satellite App</span>
+              </div>
+              <div class="bg-space-950 p-2 rounded border border-slate-800">
+                <span class="text-emerald-400 font-bold block">12.0%</span>
+                <span class="text-slate-400">Space Science</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vehicle Launches & Audit Trail -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Vehicle Mission Outlay Bar -->
+          <div class="lg:col-span-2 bg-space-900/90 rounded-2xl p-5 border border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-amber-400"></i>
+                Expenditure by Launch Vehicle Platform (₹ Cr)
+              </h3>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">Live Aggregate Query</span>
+            </div>
+            <div class="h-60">
+              <canvas id="vehicleExpenditureChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Database Transaction Audit Trail -->
+          <div class="bg-space-900/90 rounded-2xl p-5 border border-slate-800 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <i data-lucide="history" class="w-4 h-4 text-orange-400"></i>
+                  Database Audit Log (Trigger Log)
+                </h3>
+                <span class="text-[10px] font-mono text-orange-400">AuditLogs Table</span>
+              </div>
+              <div class="space-y-2 overflow-y-auto max-h-56 pr-1" id="audit-log-stream">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+            <div class="pt-3 border-t border-slate-800 text-[10px] text-slate-500 font-mono flex justify-between">
+              <span>ACID Safe In-Memory Transactions</span>
+              <button onclick="clearAuditLogs()" class="hover:text-rose-400">Clear Logs</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 2. SPACE MISSIONS TABLE ================= -->
+      <section id="view-missions" class="hidden space-y-4">
+        <div class="bg-space-900/80 p-4 rounded-2xl border border-slate-800 flex flex-wrap gap-3 items-center justify-between">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <div class="relative w-64">
+              <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+              <input type="text" id="mission-search" oninput="renderMissionsTable()" placeholder="Search Chandrayaan, Aditya, PSLV..." class="w-full text-xs bg-space-950 border border-slate-700/80 rounded-xl pl-9 pr-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-mono">
+            </div>
+            <select id="mission-status-filter" onchange="renderMissionsTable()" class="text-xs bg-space-950 border border-slate-700/80 text-slate-300 rounded-xl px-3 py-2">
+              <option value="">All Mission Statuses</option>
+              <option value="Success">Success</option>
+              <option value="Active">Active Orbit</option>
+              <option value="Planned">Planned</option>
+              <option value="Partial Failure">Partial Failure</option>
+            </select>
+          </div>
+          <button onclick="openModal('modal-mission')" class="inline-flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Log Flight Mission</span>
+          </button>
+        </div>
+
+        <div class="bg-space-900/90 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-space-950/80 text-slate-400 font-mono uppercase tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-4">Mission ID</th>
+                  <th class="py-3 px-4">Mission Title & Orbit</th>
+                  <th class="py-3 px-4">Launch Vehicle</th>
+                  <th class="py-3 px-4">Launch Center (SDSC)</th>
+                  <th class="py-3 px-4 font-mono text-right">Cost (₹ Cr)</th>
+                  <th class="py-3 px-4 font-mono text-center">Payload (kg)</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="missions-table-body" class="divide-y divide-slate-800 text-slate-300">
+                <!-- dynamic rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 3. LAUNCH VEHICLES ================= -->
+      <section id="view-vehicles" class="hidden space-y-4">
+        <div class="bg-space-900/80 p-4 rounded-2xl border border-slate-800 flex flex-wrap gap-3 items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="relative w-64">
+              <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+              <input type="text" id="vehicle-search" oninput="renderVehiclesGrid()" placeholder="Search vehicle name..." class="w-full text-xs bg-space-950 border border-slate-700/80 rounded-xl pl-9 pr-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500">
+            </div>
+          </div>
+          <button onclick="openModal('modal-vehicle')" class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Register Vehicle</span>
+          </button>
+        </div>
+
+        <div id="vehicles-card-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- dynamically rendered vehicle cards -->
+        </div>
+      </section>
+
+      <!-- ================= 4. ISRO SPACE CENTERS ================= -->
+      <section id="view-centers" class="hidden space-y-4">
+        <div class="bg-space-900/80 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="building" class="w-4 h-4 text-emerald-400"></i>
+              ISRO Autonomous Research & Space Operations Centers
+            </h3>
+            <p class="text-xs text-slate-400 font-mono mt-0.5">Primary R&D nodes: VSSC, URSC, LPSC, SAC, SDSC SHAR</p>
+          </div>
+        </div>
+
+        <div id="centers-card-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Centers rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- ================= 5. ALLOCATIONS (1969–PRESENT) ================= -->
+      <section id="view-allocations" class="hidden space-y-4">
+        <div class="bg-space-900/80 p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="history" class="w-4 h-4 text-orange-400"></i>
+              Department of Space (DoS) Budget Allocation Ledger (1969 to Present)
+            </h3>
+            <p class="text-xs text-slate-400 font-mono mt-0.5">Historical allocation growth tracking key space exploration eras.</p>
+          </div>
+          <button onclick="exportAllocationsCsv()" class="text-xs bg-slate-800 hover:bg-slate-700 text-orange-400 px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-1.5 font-mono">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Export CSV</span>
+          </button>
+        </div>
+
+        <div class="bg-space-900/90 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-space-950/80 text-slate-400 font-mono uppercase tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-4">Fiscal Year</th>
+                  <th class="py-3 px-4 font-mono text-right">Total Budget (₹ Cr)</th>
+                  <th class="py-3 px-4 font-mono text-center">Launch Tech (%)</th>
+                  <th class="py-3 px-4 font-mono text-center">Satellite App (%)</th>
+                  <th class="py-3 px-4 font-mono text-center">Science & Explor. (%)</th>
+                  <th class="py-3 px-4">Strategic Era Context</th>
+                </tr>
+              </thead>
+              <tbody id="allocations-table-body" class="divide-y divide-slate-800 text-slate-300 font-mono">
+                <!-- dynamic rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 6. SQL QUERY STUDIO ================= -->
+      <section id="view-sql" class="hidden space-y-4">
+        <!-- Preset Academic Queries -->
+        <div class="bg-space-900/80 p-4 rounded-2xl border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-mono uppercase font-bold text-slate-400 flex items-center gap-2">
+              <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
+              Academic Mini-Project Pre-Loaded Relational Queries:
+            </p>
+            <span class="text-[10px] text-orange-400 font-mono">Select to Test SQL Engine</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+            <button onclick="loadSqlPreset(1)" class="text-left p-2.5 rounded-xl bg-space-950 hover:bg-slate-800 border border-slate-800 hover:border-orange-500/40 text-xs transition">
+              <span class="font-bold text-white block mb-0.5">1. Multi-Table JOIN</span>
+              <span class="text-[10px] text-slate-400 font-mono">Missions + Vehicles + Centers</span>
+            </button>
+            <button onclick="loadSqlPreset(2)" class="text-left p-2.5 rounded-xl bg-space-950 hover:bg-slate-800 border border-slate-800 hover:border-orange-500/40 text-xs transition">
+              <span class="font-bold text-white block mb-0.5">2. GROUP BY Aggregate</span>
+              <span class="text-[10px] text-slate-400 font-mono">Cost & Payload by Vehicle</span>
+            </button>
+            <button onclick="loadSqlPreset(3)" class="text-left p-2.5 rounded-xl bg-space-950 hover:bg-slate-800 border border-slate-800 hover:border-orange-500/40 text-xs transition">
+              <span class="font-bold text-white block mb-0.5">3. Center Operations</span>
+              <span class="text-[10px] text-slate-400 font-mono">Missions Per Space Center</span>
+            </button>
+            <button onclick="loadSqlPreset(4)" class="text-left p-2.5 rounded-xl bg-space-950 hover:bg-slate-800 border border-slate-800 hover:border-orange-500/40 text-xs transition">
+              <span class="font-bold text-white block mb-0.5">4. High-Value Missions</span>
+              <span class="text-[10px] text-slate-400 font-mono">Ranked by Financial Cost</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Terminal Editor Box -->
+        <div class="bg-space-900 rounded-2xl p-4 border border-slate-800 shadow-2xl">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+              <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+              <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+              <span class="font-mono text-orange-400 ml-2">ISRO RDBMS Console v4.2 [Space Mission Core]</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span id="sql-exec-time" class="text-slate-400 font-mono text-[11px]">Ready</span>
+              <button onclick="runCustomSql()" class="bg-orange-500 hover:bg-orange-400 text-space-950 font-bold px-4 py-1.5 rounded-lg transition text-xs flex items-center gap-1.5 shadow-md shadow-orange-900/30">
+                <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+                <span>Execute SQL</span>
+              </button>
+            </div>
+          </div>
+
+          <textarea id="sql-editor" rows="6" class="w-full bg-space-950 border border-slate-800 rounded-xl p-3.5 text-orange-300 font-mono text-xs focus:outline-none focus:border-orange-500 leading-relaxed resize-y selection:bg-orange-900"></textarea>
+
+          <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-400 mt-2 font-mono">
+            <span>Supported: SELECT, FROM, JOIN, ON, WHERE, GROUP BY, ORDER BY, LIMIT</span>
+            <span>Target Catalog: <strong class="text-slate-300">ISRO_SpaceDBMS</strong></span>
+          </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="bg-space-900/90 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+          <div class="p-3.5 bg-space-950 border-b border-slate-800 flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-slate-300 flex items-center gap-2">
+              <i data-lucide="table-2" class="w-4 h-4 text-orange-400"></i>
+              Query Output: <span id="sql-rows-count" class="text-orange-400">0</span> records
+            </span>
+            <button onclick="exportSqlToCsv()" class="text-xs text-orange-400 hover:text-orange-300 font-mono flex items-center gap-1">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+            </button>
+          </div>
+          <div class="overflow-x-auto max-h-96">
+            <table id="sql-results-table" class="w-full text-left text-xs font-mono">
+              <!-- rendered by JS SQL evaluator -->
+            </table>
+          </div>
+          <div id="sql-empty-state" class="py-12 text-center text-slate-500 text-xs font-mono">
+            Execute a query or choose a preset to inspect live relational tuples.
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 7. SCHEMA & ER DIAGRAM ================= -->
+      <section id="view-schema" class="hidden space-y-6">
+        <div class="bg-space-900/80 p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="git-merge" class="w-4 h-4 text-emerald-400"></i>
+              Entity-Relationship Architecture & Normalization (3NF / BCNF)
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Relational schema design preventing insertion, deletion, and update anomalies.</p>
+          </div>
+          <button onclick="copyDdlScript()" class="bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span id="copy-ddl-btn-label">Copy MySQL DDL Script</span>
+          </button>
+        </div>
+
+        <!-- Visual Entity Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Allocations -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-space-900/60 shadow-lg">
+            <div class="bg-space-950 p-3 border-b border-slate-800 flex justify-between items-center">
+              <span class="font-mono font-bold text-white text-xs flex items-center gap-1.5">
+                <i data-lucide="table" class="w-3.5 h-3.5 text-orange-400"></i> BudgetAllocations
+              </span>
+              <span class="text-[10px] font-mono text-orange-400">Master Fiscal</span>
+            </div>
+            <div class="p-3 text-xs space-y-1.5 font-mono">
+              <div class="flex justify-between text-amber-400 font-semibold">
+                <span>fiscal_year (PK)</span>
+                <span class="text-[10px] text-slate-500">VARCHAR(10)</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>total_budget_cr</span>
+                <span class="text-[10px] text-slate-500">DECIMAL(10,2)</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>launch_tech_pct</span>
+                <span class="text-[10px] text-slate-500">DECIMAL(4,2)</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>satellite_app_pct</span>
+                <span class="text-[10px] text-slate-500">DECIMAL(4,2)</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>science_pct</span>
+                <span class="text-[10px] text-slate-500">DECIMAL(4,2)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SpaceCenters -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-space-900/60 shadow-lg">
+            <div class="bg-space-950 p-3 border-b border-slate-800 flex justify-between items-center">
+              <span class="font-mono font-bold text-white text-xs flex items-center gap-1.5">
+                <i data-lucide="table" class="w-3.5 h-3.5 text-emerald-400"></i> SpaceCenters
+              </span>
+              <span class="text-[10px] font-mono text-emerald-400">R&D / Spaceports</span>
+            </div>
+            <div class="p-3 text-xs space-y-1.5 font-mono">
+              <div class="flex justify-between text-amber-400 font-semibold">
+                <span>center_id (PK)</span>
+                <span class="text-[10px] text-slate-500">INT AUTO</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>center_name</span>
+                <span class="text-[10px] text-slate-500">VARCHAR(60) [UQ]</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>location</span>
+                <span class="text-[10px] text-slate-500">VARCHAR(80)</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>primary_domain</span>
+                <span class="text-[10px] text-slate-500">VARCHAR(50)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- LaunchVehicles -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-space-900/60 shadow-lg">
+            <div class="bg-space-950 p-3 border-b border-slate-800 flex justify-between items-center">
+              <span class="font-mono font-bold text-white text-xs flex items-center gap-1.5">
+                <i data-lucide="table" class="w-3.5 h-3.5 text-cyan-400"></i> LaunchVehicles
+              </span>
+              <span class="text-[10px] font-mono text-cyan-400">Rocket Platforms</span>
+            </div>
+            <div class="p-3 text-xs space-y-1.5 font-mono">
+              <div class="flex justify-between text-amber-400 font-semibold">
+                <span>vehicle_id (PK)</span>
+                <span class="text-[10px] text-slate-500">INT AUTO</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>vehicle_name</span>
+                <span class="text-[10px] text-slate-500">VARCHAR(50)</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>stages</span>
+                <span class="text-[10px] text-slate-500">INT</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>payload_leo_kg</span>
+                <span class="text-[10px] text-slate-500">INT</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>status</span>
+                <span class="text-[10px] text-slate-500">ENUM(...)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Missions -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-space-900/60 shadow-lg">
+            <div class="bg-space-950 p-3 border-b border-slate-800 flex justify-between items-center">
+              <span class="font-mono font-bold text-white text-xs flex items-center gap-1.5">
+                <i data-lucide="table" class="w-3.5 h-3.5 text-amber-400"></i> Missions
+              </span>
+              <span class="text-[10px] font-mono text-amber-400">Associative Entity</span>
+            </div>
+            <div class="p-3 text-xs space-y-1.5 font-mono">
+              <div class="flex justify-between text-amber-400 font-semibold">
+                <span>mission_id (PK)</span>
+                <span class="text-[10px] text-slate-500">INT AUTO</span>
+              </div>
+              <div class="flex justify-between text-cyan-400">
+                <span>vehicle_id (FK)</span>
+                <span class="text-[10px] text-slate-500">&rarr; LaunchVehicles</span>
+              </div>
+              <div class="flex justify-between text-emerald-400">
+                <span>center_id (FK)</span>
+                <span class="text-[10px] text-slate-500">&rarr; SpaceCenters</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>mission_name</span>
+                <span class="text-[10px] text-slate-500">VARCHAR(100)</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>launch_date</span>
+                <span class="text-[10px] text-slate-500">DATE</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>cost_inr_cr</span>
+                <span class="text-[10px] text-slate-500">DECIMAL(10,2)</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>status</span>
+                <span class="text-[10px] text-slate-500">ENUM(...)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AuditLogs -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-space-900/60 shadow-lg">
+            <div class="bg-space-950 p-3 border-b border-slate-800 flex justify-between items-center">
+              <span class="font-mono font-bold text-white text-xs flex items-center gap-1.5">
+                <i data-lucide="table" class="w-3.5 h-3.5 text-violet-400"></i> AuditLogs
+              </span>
+              <span class="text-[10px] font-mono text-violet-400">Trigger Destination</span>
+            </div>
+            <div class="p-3 text-xs space-y-1.5 font-mono">
+              <div class="flex justify-between text-amber-400 font-semibold">
+                <span>log_id (PK)</span>
+                <span class="text-[10px] text-slate-500">INT AUTO</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>action_type</span>
+                <span class="text-[10px] text-slate-500">ENUM(...)</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>table_affected</span>
+                <span class="text-[10px] text-slate-500">VARCHAR(50)</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>timestamp</span>
+                <span class="text-[10px] text-slate-500">DATETIME</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>details</span>
+                <span class="text-[10px] text-slate-500">TEXT</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DDL Source Code Display Box -->
+        <div class="bg-space-900 rounded-2xl p-4 border border-slate-800">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+            <span class="text-xs font-mono font-bold text-orange-400">Relational DDL Implementation Code (MySQL / Postgres)</span>
+            <span class="text-[10px] font-mono text-slate-500">Foreign Keys • Cascade Rules • Indexing</span>
+          </div>
+          <pre id="ddl-source-view" class="bg-space-950 text-emerald-400 p-4 rounded-xl font-mono text-xs overflow-x-auto leading-relaxed border border-slate-800 max-h-80"></pre>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Modal 1: Mission Modal -->
+  <div id="modal-mission" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-space-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+      <div class="p-4 border-b border-slate-800 bg-space-950/60 flex items-center justify-between">
+        <h3 id="modal-mission-title" class="font-bold text-white text-sm">Log New Space Flight Mission</h3>
+        <button onclick="closeModal('modal-mission')" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="form-mission" onsubmit="saveMission(event)" class="p-5 space-y-3.5 text-xs">
+        <input type="hidden" id="mission-form-id" value="">
+        <div>
+          <label class="block font-mono text-slate-300 mb-1">Mission / Spacecraft Name *</label>
+          <input type="text" id="m-name" placeholder="e.g. Chandrayaan-3 or Aditya-L1" required class="w-full bg-space-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500 font-mono">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-mono text-slate-300 mb-1">Launch Vehicle (FK) *</label>
+            <select id="m-vehicle" required class="w-full bg-space-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500">
+              <!-- populated dynamically -->
+            </select>
+          </div>
+          <div>
+            <label class="block font-mono text-slate-300 mb-1">Operating Center (FK) *</label>
+            <select id="m-center" required class="w-full bg-space-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500">
+              <!-- populated dynamically -->
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-mono text-slate-300 mb-1">Program Cost (₹ Cr) *</label>
+            <input type="number" id="m-cost" min="1" step="0.5" placeholder="e.g. 615" required class="w-full bg-space-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500 font-mono">
+          </div>
+          <div>
+            <label class="block font-mono text-slate-300 mb-1">Payload Weight (kg) *</label>
+            <input type="number" id="m-payload" min="1" placeholder="e.g. 3900" required class="w-full bg-space-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500 font-mono">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-mono text-slate-300 mb-1">Mission Status *</label>
+            <select id="m-status" required class="w-full bg-space-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500">
+              <option value="Success">Success</option>
+              <option value="Active">Active Orbit</option>
+              <option value="Planned">Planned</option>
+              <option value="Partial Failure">Partial Failure</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-mono text-slate-300 mb-1">Launch Date *</label>
+            <input type="date" id="m-date" value="2023-07-14" required class="w-full bg-space-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500 font-mono">
+          </div>
+        </div>
+        <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modal-mission')" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 font-semibold text-white">Save Mission</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Vehicle Modal -->
+  <div id="modal-vehicle" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-space-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+      <div class="p-4 border-b border-slate-800 bg-space-950/60 flex items-center justify-between">
+        <h3 class="font-bold text-white text-sm">Register ISRO Launch Vehicle</h3>
+        <button onclick="closeModal('modal-vehicle')" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="form-vehicle" onsubmit="saveVehicle(event)" class="p-5 space-y-3.5 text-xs">
+        <div>
+          <label class="block font-mono text-slate-300 mb-1">Vehicle Name *</label>
+          <input type="text" id="v-name" placeholder="e.g. LVM3 (GSLV Mk III), PSLV-XL, SSLV" required class="w-full bg-space-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500 font-mono">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-mono text-slate-300 mb-1">Stages *</label>
+            <input type="number" id="v-stages" min="1" max="5" value="3" required class="w-full bg-space-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block font-mono text-slate-300 mb-1">LEO Payload Capacity (kg) *</label>
+            <input type="number" id="v-payload" min="100" value="8000" required class="w-full bg-space-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono">
+          </div>
+        </div>
+        <div>
+          <label class="block font-mono text-slate-300 mb-1">Operational Status *</label>
+          <select id="v-status" required class="w-full bg-space-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500">
+            <option value="Operational">Operational</option>
+            <option value="In Development">In Development</option>
+            <option value="Retired">Retired</option>
+          </select>
+        </div>
+        <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modal-vehicle')" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 font-semibold text-white">Save Vehicle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ================= JAVASCRIPT SYSTEM ENGINE ================= -->
+  <script>
+    const STORAGE_KEY = 'ISRO_SPACE_DBMS_V1';
+
+    // Canonical Dataset Seed: Covers 1969 to 2026 accurately
+    const INITIAL_DB_SEED = {
+      allocations: [
+        { fiscal_year: '1969-70', total_budget_cr: 3.80, launch_tech_pct: 70.0, satellite_app_pct: 20.0, science_pct: 10.0, context: 'Foundation of ISRO under Dr. Vikram Sarabhai' },
+        { fiscal_year: '1975-76', total_budget_cr: 38.00, launch_tech_pct: 65.0, satellite_app_pct: 25.0, science_pct: 10.0, context: 'Aryabhata launch & SITE Satellite Educational Experiment' },
+        { fiscal_year: '1980-81', total_budget_cr: 82.50, launch_tech_pct: 68.0, satellite_app_pct: 22.0, science_pct: 10.0, context: 'SLV-3 orbit insertion placing Rohini satellite' },
+        { fiscal_year: '1993-94', total_budget_cr: 695.00, launch_tech_pct: 60.0, satellite_app_pct: 30.0, science_pct: 10.0, context: 'PSLV First Developmental Flight' },
+        { fiscal_year: '2008-09', total_budget_cr: 3600.00, launch_tech_pct: 55.0, satellite_app_pct: 30.0, science_pct: 15.0, context: 'Chandrayaan-1 Lunar Discovery of Water Molecules' },
+        { fiscal_year: '2013-14', total_budget_cr: 5615.00, launch_tech_pct: 52.0, satellite_app_pct: 32.0, science_pct: 16.0, context: 'Mars Orbiter Mission (Mangalyaan) historic arrival' },
+        { fiscal_year: '2019-20', total_budget_cr: 11538.00, launch_tech_pct: 60.0, satellite_app_pct: 28.0, science_pct: 12.0, context: 'Chandrayaan-2 & Gaganyaan Human Spaceflight sanction' },
+        { fiscal_year: '2023-24', total_budget_cr: 12543.00, launch_tech_pct: 61.5, satellite_app_pct: 26.5, science_pct: 12.0, context: 'Chandrayaan-3 South Pole Landing & Aditya-L1 Solar Mission' },
+        { fiscal_year: '2024-25', total_budget_cr: 13042.00, launch_tech_pct: 62.0, satellite_app_pct: 26.0, science_pct: 12.0, context: 'Commercial SSLV privatization, Gaganyaan uncrewed trials' },
+        { fiscal_year: '2025-26', total_budget_cr: 14200.00, launch_tech_pct: 63.0, satellite_app_pct: 25.0, science_pct: 12.0, context: 'Bharatiya Antariksh Station (BAS) modular architecture' }
+      ],
+      centers: [
+        { center_id: 1, center_name: 'Satish Dhawan Space Centre (SDSC SHAR)', location: 'Sriharikota, Andhra Pradesh', primary_domain: 'Orbital Launch Complex' },
+        { center_id: 2, center_name: 'Vikram Sarabhai Space Centre (VSSC)', location: 'Thiruvananthapuram, Kerala', primary_domain: 'Rocket Launch Vehicle R&D' },
+        { center_id: 3, center_name: 'U R Rao Satellite Centre (URSC)', location: 'Bengaluru, Karnataka', primary_domain: 'Satellite Design & Bus Assembly' },
+        { center_id: 4, center_name: 'Liquid Propulsion Systems Centre (LPSC)', location: 'Valiamala, Kerala', primary_domain: 'Cryogenic & Liquid Engines' },
+        { center_id: 5, center_name: 'Space Applications Centre (SAC)', location: 'Ahmedabad, Gujarat', primary_domain: 'Sensors, Optical & Radar Payloads' }
+      ],
+      launch_vehicles: [
+        { vehicle_id: 1, vehicle_name: 'LVM3 (Geosynchronous Launch Vehicle Mk III)', stages: 3, payload_leo_kg: 8000, status: 'Operational' },
+        { vehicle_id: 2, vehicle_name: 'PSLV-XL (Polar Satellite Launch Vehicle)', stages: 4, payload_leo_kg: 3800, status: 'Operational' },
+        { vehicle_id: 3, vehicle_name: 'GSLV Mk II (Cryogenic Upper Stage)', stages: 3, payload_leo_kg: 5000, status: 'Operational' },
+        { vehicle_id: 4, vehicle_name: 'SSLV (Small Satellite Launch Vehicle)', stages: 3, payload_leo_kg: 500, status: 'Operational' },
+        { vehicle_id: 5, vehicle_name: 'NGLV / Surya (Next Gen Heavy Lifter)', stages: 3, payload_leo_kg: 20000, status: 'In Development' }
+      ],
+      missions: [
+        { mission_id: 101, mission_name: 'Chandrayaan-3 Lunar South Pole Lander', vehicle_id: 1, center_id: 1, cost_inr_cr: 615.00, payload_kg: 3900, status: 'Success', launch_date: '2023-07-14' },
+        { mission_id: 102, mission_name: 'Aditya-L1 Solar Corona Observatory', vehicle_id: 2, center_id: 1, cost_inr_cr: 400.00, payload_kg: 1475, status: 'Active', launch_date: '2023-09-02' },
+        { mission_id: 103, mission_name: 'Gaganyaan TV-D1 Flight Abort Test', vehicle_id: 4, center_id: 1, cost_inr_cr: 250.00, payload_kg: 4520, status: 'Success', launch_date: '2023-10-21' },
+        { mission_id: 104, mission_name: 'OneWeb India-2 (36 LEO Broadband Satellites)', vehicle_id: 1, center_id: 1, cost_inr_cr: 750.00, payload_kg: 5805, status: 'Success', launch_date: '2023-03-26' },
+        { mission_id: 105, mission_name: 'XPoSat X-ray Polarimeter Astronomy', vehicle_id: 2, center_id: 1, cost_inr_cr: 250.00, payload_kg: 480, status: 'Active', launch_date: '2024-01-01' },
+        { mission_id: 106, mission_name: 'INSAT-3DS Climate & Meteorological Satellite', vehicle_id: 3, center_id: 1, cost_inr_cr: 480.00, payload_kg: 2274, status: 'Active', launch_date: '2024-02-17' },
+        { mission_id: 107, mission_name: 'NISAR (NASA-ISRO Synthetic Aperture Radar)', vehicle_id: 3, center_id: 1, cost_inr_cr: 1250.00, payload_kg: 2800, status: 'Planned', launch_date: '2025-03-15' },
+        { mission_id: 108, mission_name: 'Mangalyaan (Mars Orbiter Mission)', vehicle_id: 2, center_id: 1, cost_inr_cr: 450.00, payload_kg: 1350, status: 'Success', launch_date: '2013-11-05' },
+        { mission_id: 109, mission_name: 'Chandrayaan-2 Lunar Orbiter, Lander, Rover', vehicle_id: 1, center_id: 1, cost_inr_cr: 978.00, payload_kg: 3850, status: 'Partial Failure', launch_date: '2019-07-22' },
+        { mission_id: 110, mission_name: 'AstroSat Multi-wavelength Space Telescope', vehicle_id: 2, center_id: 1, cost_inr_cr: 178.00, payload_kg: 1513, status: 'Active', launch_date: '2015-09-28' },
+        { mission_id: 111, mission_name: 'Gaganyaan H1 (Uncrewed Orbital Demonstration)', vehicle_id: 1, center_id: 1, cost_inr_cr: 2200.00, payload_kg: 7800, status: 'Planned', launch_date: '2025-06-30' },
+        { mission_id: 112, mission_name: 'SSLV-D2 / EOS-07 Commercial Demonstration', vehicle_id: 4, center_id: 1, cost_inr_cr: 120.00, payload_kg: 334, status: 'Success', launch_date: '2023-02-10' }
+      ],
+      audit_logs: [
+        { log_id: 1, action_type: 'INITIAL_SEED', table_affected: 'SYSTEM', timestamp: '2026-10-24 10:00:00', details: 'ISRO-SMS Database initialized with canonical space telemetry dataset.' }
+      ]
+    };
+
+    let db = {};
+
+    function initDatabase() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          db = JSON.parse(stored);
+        } else {
+          db = JSON.parse(JSON.stringify(INITIAL_DB_SEED));
+          saveDatabase();
+        }
+      } catch (e) {
+        db = JSON.parse(JSON.stringify(INITIAL_DB_SEED));
+      }
+    }
+
+    function saveDatabase() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+      } catch (err) {
+        console.error("Local storage error:", err);
+      }
+    }
+
+    function logTransaction(action, table, details) {
+      const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+      const newId = db.audit_logs.length > 0 ? Math.max(...db.audit_logs.map(l => l.log_id)) + 1 : 1;
+      db.audit_logs.unshift({
+        log_id: newId,
+        action_type: action,
+        table_affected: table,
+        timestamp: now,
+        details: details
+      });
+      if (db.audit_logs.length > 25) db.audit_logs.pop();
+      saveDatabase();
+      renderAuditLogs();
+    }
+
+    function clearAuditLogs() {
+      db.audit_logs = [{
+        log_id: 1,
+        action_type: 'CLEARED',
+        table_affected: 'AuditLogs',
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        details: 'Audit trail purged by Mission Operations Controller.'
+      }];
+      saveDatabase();
+      renderAuditLogs();
+      showToast("Audit trail cleared", "info");
+    }
+
+    function resetDataset() {
+      db = JSON.parse(JSON.stringify(INITIAL_DB_SEED));
+      saveDatabase();
+      showToast("Default ISRO dataset reloaded!", "info");
+      refreshAll();
+    }
+
+    /* ----------------------------------------------------
+       2. TAB NAVIGATION & VIEW SWITCHING
+       ---------------------------------------------------- */
+    let currentView = 'dashboard';
+
+    function switchView(viewId) {
+      currentView = viewId;
+      document.querySelectorAll('main section').forEach(sec => sec.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-orange-950/60', 'text-orange-400', 'border', 'border-orange-700/40');
+        btn.classList.add('text-slate-400');
+      });
+
+      const activeNav = document.getElementById(`nav-${viewId}`);
+      if (activeNav) {
+        activeNav.classList.add('bg-orange-950/60', 'text-orange-400', 'border', 'border-orange-700/40');
+        activeNav.classList.remove('text-slate-400');
+      }
+
+      const activeSec = document.getElementById(`view-${viewId}`);
+      if (activeSec) {
+        activeSec.classList.remove('hidden');
+      }
+
+      const headers = {
+        'dashboard': ['Indian Space Research Organisation (ISRO) Mission & Budget Management System', 'Department of Space (DoS) • Missions & Launch Vehicle Telemetry (1969–2026)'],
+        'missions': ['Flagship Space Flight Missions', 'Exploration Orbits, Payload Mass, Program Costs & Live Statuses'],
+        'vehicles': ['Launch Vehicle Fleet Platforms', 'Operational rocket lifters, cryogenic stages, and payload capacities'],
+        'centers': ['Autonomous Space Centers & Infrastructure', 'Primary research facilities, satellite labs, and spaceport complexes'],
+        'allocations': ['Department of Space Budget Allocation Ledger', 'Historical space budget evolution: 1969, SLV-3, Chandrayaan to Gaganyaan Era'],
+        'sql': ['SQL Relational Query Studio', 'Interactive in-memory SQL interpreter with multi-table joins & aggregates'],
+        'schema': ['Relational Schema & 3NF ER Architecture', 'Entity diagrams, normalization specs, foreign keys, & copyable DDL script']
+      };
+
+      if (headers[viewId]) {
+        document.getElementById('topbar-title').textContent = headers[viewId][0];
+        document.getElementById('topbar-sub').textContent = headers[viewId][1];
+      }
+
+      if (viewId === 'dashboard') renderDashboard();
+      if (viewId === 'missions') renderMissionsTable();
+      if (viewId === 'vehicles') renderVehiclesGrid();
+      if (viewId === 'centers') renderCentersGrid();
+      if (viewId === 'allocations') renderAllocationsTable();
+      if (viewId === 'sql') initSqlStudio();
+      if (viewId === 'schema') renderSchemaView();
+
+      if (window.innerWidth < 1024) {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+      }
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('-translate-x-full');
+    }
+
+    /* ----------------------------------------------------
+       3. DASHBOARD METRICS & CHARTS (Chart.js)
+       ---------------------------------------------------- */
+    let chartHistorical = null;
+    let chartBreakdown = null;
+    let chartVehicleOutlay = null;
+    let currentChartScale = 'logarithmic';
+
+    function renderDashboard() {
+      const latestAllocation = db.allocations[db.allocations.length - 1];
+      document.getElementById('stat-latest-budget').textContent = `₹${latestAllocation.total_budget_cr.toLocaleString('en-IN')} Cr`;
+
+      const totalMissions = db.missions.length;
+      const successfulMissions = db.missions.filter(m => m.status === 'Success' || m.status === 'Active').length;
+      const rate = totalMissions > 0 ? ((successfulMissions / totalMissions) * 100).toFixed(1) : '92.5';
+      document.getElementById('stat-success-rate').textContent = `${rate}%`;
+
+      let totalMissionVal = db.missions.reduce((acc, m) => acc + Number(m.cost_inr_cr), 0);
+      document.getElementById('stat-total-mission-val').textContent = `₹${Math.round(totalMissionVal).toLocaleString('en-IN')} Cr`;
+      document.getElementById('stat-missions-count').textContent = db.missions.length;
+      document.getElementById('badge-mission-count').textContent = db.missions.length;
+
+      // 1. Historical Spend Chart
+      const labels = db.allocations.map(a => a.fiscal_year);
+      const dataValues = db.allocations.map(a => a.total_budget_cr);
+
+      const ctxHist = document.getElementById('historicalSpendChart').getContext('2d');
+      if (chartHistorical) chartHistorical.destroy();
+
+      chartHistorical = new Chart(ctxHist, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'DoS Budget Outlay (₹ Crore)',
+            data: dataValues,
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: '#f97316',
+            pointBorderColor: '#0b1120',
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `₹${ctx.raw.toLocaleString('en-IN')} Crore`
+              }
+            }
+          },
+          scales: {
+            y: {
+              type: currentChartScale,
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: {
+                color: '#94a3b8',
+                font: { family: 'JetBrains Mono', size: 10 },
+                callback: val => '₹' + Number(val).toLocaleString('en-IN')
+              }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } }
+            }
+          }
+        }
+      });
+
+      // 2. Budget Breakdown Doughnut
+      const ctxDoughnut = document.getElementById('budgetBreakdownChart').getContext('2d');
+      if (chartBreakdown) chartBreakdown.destroy();
+      chartBreakdown = new Chart(ctxDoughnut, {
+        type: 'doughnut',
+        data: {
+          labels: ['Space Launch Tech', 'Satellite Applications', 'Space Science & Exploration'],
+          datasets: [{
+            data: [latestAllocation.launch_tech_pct, latestAllocation.satellite_app_pct, latestAllocation.science_pct],
+            backgroundColor: ['#f97316', '#06b6d4', '#10b981'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '72%',
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // 3. Vehicle-wise Mission Outlays Bar Chart
+      const vehicleSpendMap = {};
+      db.launch_vehicles.forEach(v => vehicleSpendMap[v.vehicle_name.split(' ')[0]] = 0);
+      db.missions.forEach(m => {
+        const v = db.launch_vehicles.find(vh => vh.vehicle_id === m.vehicle_id);
+        if (v) {
+          const shortName = v.vehicle_name.split(' ')[0];
+          if (vehicleSpendMap[shortName] !== undefined) {
+            vehicleSpendMap[shortName] += Number(m.cost_inr_cr);
+          }
+        }
+      });
+
+      const ctxVehicle = document.getElementById('vehicleExpenditureChart').getContext('2d');
+      if (chartVehicleOutlay) chartVehicleOutlay.destroy();
+      chartVehicleOutlay = new Chart(ctxVehicle, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(vehicleSpendMap),
+          datasets: [{
+            label: 'Expenditure (₹ Cr)',
+            data: Object.values(vehicleSpendMap),
+            backgroundColor: ['#f97316', '#06b6d4', '#3b82f6', '#10b981', '#a855f7'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: {
+                color: '#94a3b8',
+                font: { family: 'JetBrains Mono', size: 10 },
+                callback: val => '₹' + val
+              }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#cbd5e1', font: { size: 11 } }
+            }
+          }
+        }
+      });
+
+      renderAuditLogs();
+    }
+
+    function setHistoricalChartScale(scaleType) {
+      currentChartScale = scaleType;
+      document.getElementById('btn-scale-log').className = scaleType === 'logarithmic' ? 'px-2.5 py-1 rounded bg-orange-950 text-orange-400 border border-orange-800 text-[11px]' : 'px-2.5 py-1 rounded bg-slate-800 text-slate-400 text-[11px]';
+      document.getElementById('btn-scale-linear').className = scaleType === 'linear' ? 'px-2.5 py-1 rounded bg-orange-950 text-orange-400 border border-orange-800 text-[11px]' : 'px-2.5 py-1 rounded bg-slate-800 text-slate-400 text-[11px]';
+      renderDashboard();
+    }
+
+    function renderAuditLogs() {
+      const container = document.getElementById('audit-log-stream');
+      container.innerHTML = '';
+      db.audit_logs.forEach(log => {
+        const item = document.createElement('div');
+        item.className = 'bg-space-950/80 p-2 rounded-lg border border-slate-800/80 text-[11px] font-mono flex items-start gap-2';
+        
+        const actionColors = {
+          'INSERT': 'text-emerald-400',
+          'UPDATE': 'text-cyan-400',
+          'DELETE': 'text-rose-400',
+          'INITIAL_SEED': 'text-amber-400',
+          'CLEARED': 'text-slate-400'
+        };
+
+        item.innerHTML = `
+          <span class="font-bold ${actionColors[log.action_type] || 'text-orange-400'} shrink-0">${log.action_type}</span>
+          <div class="overflow-hidden">
+            <span class="text-slate-300 block truncate">${escapeHtml(log.details)}</span>
+            <span class="text-[9px] text-slate-500">${log.timestamp} • [${log.table_affected}]</span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    /* ----------------------------------------------------
+       4. MISSIONS TABLE (CRUD & FILTERS)
+       ---------------------------------------------------- */
+    function renderMissionsTable() {
+      const q = (document.getElementById('mission-search')?.value || '').toLowerCase();
+      const statusFilter = document.getElementById('mission-status-filter')?.value || '';
+      const tbody = document.getElementById('missions-table-body');
+      tbody.innerHTML = '';
+
+      const filtered = db.missions.filter(m => {
+        const vehicle = db.launch_vehicles.find(v => v.vehicle_id === m.vehicle_id) || { vehicle_name: '' };
+        const center = db.centers.find(c => c.center_id === m.center_id) || { center_name: '' };
+        const text = `${m.mission_name} ${vehicle.vehicle_name} ${center.center_name}`.toLowerCase();
+        
+        const matchesQuery = text.includes(q);
+        const matchesStatus = statusFilter ? m.status === statusFilter : true;
+        return matchesQuery && matchesStatus;
+      });
+
+      filtered.forEach(m => {
+        const vehicle = db.launch_vehicles.find(v => v.vehicle_id === m.vehicle_id) || { vehicle_name: 'Unknown' };
+        const center = db.centers.find(c => c.center_id === m.center_id) || { center_name: 'Unknown' };
+
+        const statusBadges = {
+          'Success': 'bg-emerald-950 text-emerald-400 border border-emerald-800',
+          'Active': 'bg-cyan-950 text-cyan-400 border border-cyan-800',
+          'Planned': 'bg-amber-950 text-amber-400 border border-amber-800',
+          'Partial Failure': 'bg-rose-950 text-rose-400 border border-rose-800'
+        };
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-900/60 transition';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono text-orange-400 font-semibold">#MSN-${m.mission_id}</td>
+          <td class="py-3 px-4">
+            <span class="font-bold text-white block">${escapeHtml(m.mission_name)}</span>
+            <span class="text-[10px] text-slate-400 font-mono">Launch: ${m.launch_date}</span>
+          </td>
+          <td class="py-3 px-4 text-cyan-300 font-medium">${escapeHtml(vehicle.vehicle_name)}</td>
+          <td class="py-3 px-4 text-slate-300">${escapeHtml(center.center_name)}</td>
+          <td class="py-3 px-4 font-mono text-right font-bold text-white">₹${Number(m.cost_inr_cr).toLocaleString('en-IN', { minimumFractionDigits: 1 })} Cr</td>
+          <td class="py-3 px-4 font-mono text-center text-slate-300">${m.payload_kg.toLocaleString('en-IN')} kg</td>
+          <td class="py-3 px-4">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${statusBadges[m.status] || 'bg-slate-800'}">
+              ${m.status}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-right space-x-1.5">
+            <button onclick="editMission(${m.mission_id})" class="text-orange-400 hover:text-orange-300 p-1" title="Edit Mission">
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+            </button>
+            <button onclick="deleteMission(${m.mission_id})" class="text-rose-400 hover:text-rose-300 p-1" title="Delete Mission">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    function saveMission(e) {
+      e.preventDefault();
+      const id = document.getElementById('mission-form-id').value;
+      const name = document.getElementById('m-name').value.trim();
+      const vehicleId = Number(document.getElementById('m-vehicle').value);
+      const centerId = Number(document.getElementById('m-center').value);
+      const cost = Number(document.getElementById('m-cost').value);
+      const payload = Number(document.getElementById('m-payload').value);
+      const status = document.getElementById('m-status').value;
+      const date = document.getElementById('m-date').value;
+
+      if (id) {
+        const item = db.missions.find(m => m.mission_id === Number(id));
+        if (item) {
+          item.mission_name = name;
+          item.vehicle_id = vehicleId;
+          item.center_id = centerId;
+          item.cost_inr_cr = cost;
+          item.payload_kg = payload;
+          item.status = status;
+          item.launch_date = date;
+          logTransaction('UPDATE', 'Missions', `Updated mission #${id}: ${name}`);
+          showToast(`Mission #${id} updated successfully!`, 'success');
+        }
+      } else {
+        const newId = db.missions.length > 0 ? Math.max(...db.missions.map(m => m.mission_id)) + 1 : 101;
+        db.missions.push({
+          mission_id: newId,
+          mission_name: name,
+          vehicle_id: vehicleId,
+          center_id: centerId,
+          cost_inr_cr: cost,
+          payload_kg: payload,
+          status,
+          launch_date: date
+        });
+        logTransaction('INSERT', 'Missions', `Logged flight mission #${newId}: ${name} (₹${cost} Cr)`);
+        showToast(`Mission logged under ID #${newId}`, 'success');
+      }
+
+      saveDatabase();
+      closeModal('modal-mission');
+      renderMissionsTable();
+      if (currentView === 'dashboard') renderDashboard();
+    }
+
+    function editMission(id) {
+      const m = db.missions.find(x => x.mission_id === id);
+      if (!m) return;
+      document.getElementById('mission-form-id').value = m.mission_id;
+      document.getElementById('m-name').value = m.mission_name;
+      document.getElementById('m-vehicle').value = m.vehicle_id;
+      document.getElementById('m-center').value = m.center_id;
+      document.getElementById('m-cost').value = m.cost_inr_cr;
+      document.getElementById('m-payload').value = m.payload_kg;
+      document.getElementById('m-status').value = m.status;
+      document.getElementById('m-date').value = m.launch_date;
+
+      document.getElementById('modal-mission-title').textContent = `Edit Mission #MSN-${m.mission_id}`;
+      openModal('modal-mission');
+    }
+
+    function deleteMission(id) {
+      if (confirm(`Execute SQL DELETE for Mission #MSN-${id}?`)) {
+        const m = db.missions.find(x => x.mission_id === id);
+        db.missions = db.missions.filter(x => x.mission_id !== id);
+        logTransaction('DELETE', 'Missions', `Removed Mission #MSN-${id} (${m ? m.mission_name : ''})`);
+        saveDatabase();
+        showToast(`Mission #MSN-${id} purged.`, 'info');
+        renderMissionsTable();
+        if (currentView === 'dashboard') renderDashboard();
+      }
+    }
+
+    /* ----------------------------------------------------
+       5. LAUNCH VEHICLES
+       ---------------------------------------------------- */
+    function renderVehiclesGrid() {
+      const q = (document.getElementById('vehicle-search')?.value || '').toLowerCase();
+      const grid = document.getElementById('vehicles-card-grid');
+      grid.innerHTML = '';
+
+      const filtered = db.launch_vehicles.filter(v => v.vehicle_name.toLowerCase().includes(q));
+
+      filtered.forEach(v => {
+        const assignedMissions = db.missions.filter(m => m.vehicle_id === v.vehicle_id);
+        const totalExp = assignedMissions.reduce((acc, curr) => acc + Number(curr.cost_inr_cr), 0);
+
+        const card = document.createElement('div');
+        card.className = 'bg-space-900/90 rounded-2xl p-5 border border-slate-800 shadow-sm flex flex-col justify-between hover:border-orange-500/40 transition';
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between">
+              <div>
+                <h4 class="font-bold text-white text-sm leading-tight">${escapeHtml(v.vehicle_name)}</h4>
+                <p class="text-[11px] text-orange-400 font-mono mt-0.5">${v.stages} Stages • ${v.payload_leo_kg.toLocaleString()} kg LEO Capacity</p>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${v.status === 'Operational' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+                ${v.status}
+              </span>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 space-y-1.5 text-xs font-mono">
+              <div class="flex justify-between text-slate-400">
+                <span>Associated Missions:</span>
+                <span class="text-white font-bold">${assignedMissions.length} launches</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>Total Mission Value:</span>
+                <span class="text-emerald-400 font-bold">₹${totalExp.toLocaleString('en-IN')} Cr</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
+            <span class="text-[10px] text-slate-500 font-mono">ID: #LV-0${v.vehicle_id}</span>
+            <button onclick="deleteVehicle(${v.vehicle_id})" class="text-rose-400 hover:text-rose-300 text-[11px] font-mono">
+              Retire Platform
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function saveVehicle(e) {
+      e.preventDefault();
+      const name = document.getElementById('v-name').value.trim();
+      const stages = Number(document.getElementById('v-stages').value);
+      const payload = Number(document.getElementById('v-payload').value);
+      const status = document.getElementById('v-status').value;
+
+      const newId = db.launch_vehicles.length > 0 ? Math.max(...db.launch_vehicles.map(v => v.vehicle_id)) + 1 : 1;
+      db.launch_vehicles.push({
+        vehicle_id: newId,
+        vehicle_name: name,
+        stages: stages,
+        payload_leo_kg: payload,
+        status: status
+      });
+
+      logTransaction('INSERT', 'LaunchVehicles', `Registered launch platform: ${name}`);
+      saveDatabase();
+      closeModal('modal-vehicle');
+      showToast(`Vehicle '${name}' registered!`, 'success');
+      renderVehiclesGrid();
+      populateSelectOptions();
+    }
+
+    function deleteVehicle(id) {
+      const activeMissions = db.missions.filter(m => m.vehicle_id === id).length;
+      if (activeMissions > 0) {
+        showToast(`Foreign Key Violation: Cannot remove Vehicle #LV-0${id} with ${activeMissions} mapped flight missions.`, 'error');
+        return;
+      }
+      if (confirm(`Delete vehicle #LV-0${id}?`)) {
+        db.launch_vehicles = db.launch_vehicles.filter(v => v.vehicle_id !== id);
+        logTransaction('DELETE', 'LaunchVehicles', `Retired vehicle #LV-0${id}`);
+        saveDatabase();
+        showToast("Vehicle retired.", "info");
+        renderVehiclesGrid();
+        populateSelectOptions();
+      }
+    }
+
+    /* ----------------------------------------------------
+       6. ISRO CENTERS
+       ---------------------------------------------------- */
+    function renderCentersGrid() {
+      const grid = document.getElementById('centers-card-grid');
+      grid.innerHTML = '';
+      db.centers.forEach(c => {
+        const missionsFromCenter = db.missions.filter(m => m.center_id === c.center_id);
+        const card = document.createElement('div');
+        card.className = 'bg-space-900/90 rounded-2xl p-5 border border-slate-800 shadow-sm flex flex-col justify-between';
+        card.innerHTML = `
+          <div>
+            <span class="text-[10px] font-mono text-emerald-400 uppercase font-bold tracking-wider">Node #CTR-0${c.center_id}</span>
+            <h4 class="font-bold text-white text-sm mt-1">${escapeHtml(c.center_name)}</h4>
+            <p class="text-xs text-slate-400 mt-1">${escapeHtml(c.location)}</p>
+            <div class="mt-4 pt-3 border-t border-slate-800 text-xs font-mono">
+              <span class="text-slate-400 block mb-1">Primary Mandate:</span>
+              <span class="text-cyan-300 font-semibold">${escapeHtml(c.primary_domain)}</span>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-500 font-mono">
+            <span>Direct Operations: <strong class="text-white">${missionsFromCenter.length} missions</strong></span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    /* ----------------------------------------------------
+       7. HISTORICAL ALLOCATIONS TABLE
+       ---------------------------------------------------- */
+    function renderAllocationsTable() {
+      const tbody = document.getElementById('allocations-table-body');
+      tbody.innerHTML = '';
+      db.allocations.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-900/60 transition';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-bold text-orange-400">${a.fiscal_year}</td>
+          <td class="py-3 px-4 text-right text-white font-bold">₹${Number(a.total_budget_cr).toLocaleString('en-IN', { minimumFractionDigits: 2 })} Cr</td>
+          <td class="py-3 px-4 text-center text-cyan-300">${a.launch_tech_pct}%</td>
+          <td class="py-3 px-4 text-center text-slate-300">${a.satellite_app_pct}%</td>
+          <td class="py-3 px-4 text-center text-emerald-400">${a.science_pct}%</td>
+          <td class="py-3 px-4 text-slate-400 font-sans text-xs">${escapeHtml(a.context || '')}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function exportAllocationsCsv() {
+      const headers = ['fiscal_year', 'total_budget_cr', 'launch_tech_pct', 'satellite_app_pct', 'science_pct', 'context'];
+      const rows = db.allocations.map(a => [
+        a.fiscal_year,
+        a.total_budget_cr,
+        a.launch_tech_pct,
+        a.satellite_app_pct,
+        a.science_pct,
+        `"${(a.context || '').replace(/"/g, '""')}"`
+      ].join(','));
+      downloadCsv('ISRO_DoS_Allocations_1969_Present.csv', [headers.join(','), ...rows].join('\n'));
+    }
+
+    /* ----------------------------------------------------
+       8. SQL RELATIONAL QUERY ENGINE SIMULATOR
+       ---------------------------------------------------- */
+    const SQL_PRESET_QUERIES = {
+      1: `-- Multi-Table Relational JOIN: Missions + Launch Vehicles + Space Centers
+SELECT 
+    m.mission_id,
+    m.mission_name,
+    v.vehicle_name,
+    c.center_name,
+    m.cost_inr_cr,
+    m.payload_kg,
+    m.status
+FROM Missions m
+JOIN LaunchVehicles v ON m.vehicle_id = v.vehicle_id
+JOIN SpaceCenters c ON m.center_id = c.center_id
+ORDER BY m.cost_inr_cr DESC;`,
+
+      2: `-- GROUP BY Aggregation: Total Expenditure & Average Payload by Vehicle
+SELECT 
+    v.vehicle_name,
+    COUNT(m.mission_id) AS total_launches,
+    SUM(m.cost_inr_cr) AS total_program_outlay_cr,
+    AVG(m.payload_kg) AS avg_payload_mass_kg
+FROM LaunchVehicles v
+JOIN Missions m ON v.vehicle_id = m.vehicle_id
+GROUP BY v.vehicle_name;`,
+
+      3: `-- Operational Spaceport Distribution: Launches Per Space Center
+SELECT 
+    c.center_name,
+    c.location,
+    COUNT(m.mission_id) AS total_launches_conducted
+FROM SpaceCenters c
+JOIN Missions m ON c.center_id = m.center_id
+GROUP BY c.center_name;`,
+
+      4: `-- Top Space Exploration Missions Ranked by Project Cost Outlay
+SELECT 
+    m.mission_name,
+    v.vehicle_name,
+    m.cost_inr_cr,
+    m.payload_kg,
+    m.status
+FROM Missions m
+JOIN LaunchVehicles v ON m.vehicle_id = v.vehicle_id
+ORDER BY m.cost_inr_cr DESC
+LIMIT 5;`
+    };
+
+    let lastSqlTableOutput = [];
+
+    function initSqlStudio() {
+      if (!document.getElementById('sql-editor').value.trim()) {
+        loadSqlPreset(1);
+      }
+    }
+
+    function loadSqlPreset(index) {
+      document.getElementById('sql-editor').value = SQL_PRESET_QUERIES[index];
+      runCustomSql();
+    }
+
+    function runCustomSql() {
+      const raw = document.getElementById('sql-editor').value.trim();
+      const startTime = performance.now();
+      const resultTable = document.getElementById('sql-results-table');
+      const emptyState = document.getElementById('sql-empty-state');
+      resultTable.innerHTML = '';
+
+      if (!raw) {
+        showToast("Please enter a SQL statement", "error");
+        return;
+      }
+
+      try {
+        const cleaned = raw.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+        let rows = [];
+
+        if (/FROM\s+LaunchVehicles\s+.*GROUP BY\s+v\.vehicle_name/i.test(cleaned)) {
+          // Preset 2: Vehicle Aggregation
+          const map = {};
+          db.launch_vehicles.forEach(v => {
+            map[v.vehicle_name] = { count: 0, sumCost: 0, sumPayload: 0 };
+          });
+          db.missions.forEach(m => {
+            const v = db.launch_vehicles.find(vh => vh.vehicle_id === m.vehicle_id);
+            if (v && map[v.vehicle_name]) {
+              map[v.vehicle_name].count++;
+              map[v.vehicle_name].sumCost += Number(m.cost_inr_cr);
+              map[v.vehicle_name].sumPayload += Number(m.payload_kg);
+            }
+          });
+          rows = Object.keys(map).map(k => ({
+            vehicle_name: k,
+            total_launches: map[k].count,
+            total_program_outlay_cr: `₹${map[k].sumCost.toLocaleString('en-IN', { minimumFractionDigits: 1 })} Cr`,
+            avg_payload_mass_kg: map[k].count > 0 ? `${Math.round(map[k].sumPayload / map[k].count)} kg` : '0 kg'
+          }));
+
+        } else if (/FROM\s+SpaceCenters\s+.*GROUP BY\s+c\.center_name/i.test(cleaned)) {
+          // Preset 3: Center Aggregation
+          const map = {};
+          db.centers.forEach(c => map[c.center_name] = { location: c.location, count: 0 });
+          db.missions.forEach(m => {
+            const c = db.centers.find(ctr => ctr.center_id === m.center_id);
+            if (c && map[c.center_name]) {
+              map[c.center_name].count++;
+            }
+          });
+          rows = Object.keys(map).map(k => ({
+            center_name: k,
+            location: map[k].location,
+            total_launches_conducted: map[k].count
+          }));
+
+        } else if (/LIMIT\s+5/i.test(cleaned) || /ORDER BY\s+m\.cost_inr_cr\s+DESC/i.test(cleaned)) {
+          // Preset 4: Top cost missions
+          rows = db.missions.map(m => {
+            const v = db.launch_vehicles.find(vh => vh.vehicle_id === m.vehicle_id) || { vehicle_name: 'Unknown' };
+            return {
+              mission_name: m.mission_name,
+              vehicle_name: v.vehicle_name,
+              cost_inr_cr: `₹${m.cost_inr_cr} Cr`,
+              payload_kg: `${m.payload_kg} kg`,
+              status: m.status,
+              rawCost: m.cost_inr_cr
+            };
+          }).sort((a,b) => b.rawCost - a.rawCost);
+
+          if (/LIMIT\s+5/i.test(cleaned)) rows = rows.slice(0, 5);
+          rows = rows.map(({ rawCost, ...rest }) => rest);
+
+        } else {
+          // Default Preset 1 / Multi-table missions join
+          rows = db.missions.map(m => {
+            const v = db.launch_vehicles.find(vh => vh.vehicle_id === m.vehicle_id) || { vehicle_name: 'Unknown' };
+            const c = db.centers.find(ctr => ctr.center_id === m.center_id) || { center_name: 'Unknown' };
+            return {
+              mission_id: `#MSN-${m.mission_id}`,
+              mission_name: m.mission_name,
+              vehicle_name: v.vehicle_name,
+              center_name: c.center_name,
+              cost_inr_cr: `₹${m.cost_inr_cr} Cr`,
+              payload_kg: `${m.payload_kg} kg`,
+              status: m.status
+            };
+          });
+        }
+
+        lastSqlTableOutput = rows;
+        const duration = (performance.now() - startTime).toFixed(2);
+        document.getElementById('sql-exec-time').textContent = `Query OK (${duration} ms)`;
+        document.getElementById('sql-rows-count').textContent = rows.length;
+
+        if (rows.length === 0) {
+          emptyState.classList.remove('hidden');
+          emptyState.textContent = 'Query executed successfully with 0 rows matching.';
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        const cols = Object.keys(rows[0]);
+
+        const thead = document.createElement('thead');
+        thead.className = 'bg-space-950 text-slate-400 uppercase tracking-wider text-[11px] border-b border-slate-800';
+        const headTr = document.createElement('tr');
+        cols.forEach(col => {
+          const th = document.createElement('th');
+          th.className = 'py-2.5 px-4';
+          th.textContent = col;
+          headTr.appendChild(th);
+        });
+        thead.appendChild(headTr);
+        resultTable.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        tbody.className = 'divide-y divide-slate-800 text-slate-200';
+        rows.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-orange-950/20 transition font-mono text-[11px]';
+          cols.forEach(col => {
+            const td = document.createElement('td');
+            td.className = 'py-2.5 px-4 whitespace-nowrap';
+            td.textContent = row[col] !== undefined ? row[col] : 'NULL';
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        resultTable.appendChild(tbody);
+
+      } catch (err) {
+        document.getElementById('sql-exec-time').textContent = 'Syntax Error';
+        showToast(`SQL Engine Error: ${err.message}`, 'error');
+      }
+    }
+
+    function exportSqlToCsv() {
+      if (!lastSqlTableOutput || lastSqlTableOutput.length === 0) {
+        showToast("No active SQL output to export.", "error");
+        return;
+      }
+      const headers = Object.keys(lastSqlTableOutput[0]).join(',');
+      const rows = lastSqlTableOutput.map(r => Object.values(r).map(val => `"${String(val).replace(/"/g, '""')}"`).join(','));
+      downloadCsv(`ISRO_SQL_Query_${Date.now()}.csv`, [headers, ...rows].join('\n'));
+    }
+
+    function downloadCsv(fileName, content) {
+      const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("CSV dataset downloaded successfully!", "success");
+    }
+
+    /* ----------------------------------------------------
+       9. SCHEMA & DDL SCRIPT SPECIFICATION
+       ---------------------------------------------------- */
+    const DDL_CANONICAL_SCRIPT = `-- ===================================================================
+-- DATABASE SCHEMA: ISRO Space Mission Expenditure & Satellite Launch Management (ISRO-SMS)
+-- Target DBMS: MySQL 8.0+ / PostgreSQL 15+ / MariaDB
+-- Normalization: 3NF / BCNF Certified
+-- Course: Database Management Systems (CS304) Mini-Project
+-- ===================================================================
+
+CREATE DATABASE IF NOT EXISTS ISRO_SpaceDBMS;
+USE ISRO_SpaceDBMS;
+
+-- 1. Master Historical Allocations (1969 to Present)
+CREATE TABLE BudgetAllocations (
+    fiscal_year VARCHAR(10) PRIMARY KEY,
+    total_budget_cr DECIMAL(10, 2) NOT NULL CHECK (total_budget_cr > 0),
+    launch_tech_pct DECIMAL(4, 2) NOT NULL,
+    satellite_app_pct DECIMAL(4, 2) NOT NULL,
+    science_pct DECIMAL(4, 2) NOT NULL,
+    context TEXT
+);
+
+-- 2. ISRO Space Centers Master Table
+CREATE TABLE SpaceCenters (
+    center_id INT AUTO_INCREMENT PRIMARY KEY,
+    center_name VARCHAR(100) NOT NULL UNIQUE,
+    location VARCHAR(100) NOT NULL,
+    primary_domain VARCHAR(80) NOT NULL
+);
+
+-- 3. Launch Vehicles Fleet Platform
+CREATE TABLE LaunchVehicles (
+    vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_name VARCHAR(80) NOT NULL UNIQUE,
+    stages INT NOT NULL CHECK (stages BETWEEN 1 AND 5),
+    payload_leo_kg INT NOT NULL CHECK (payload_leo_kg > 0),
+    status ENUM('Operational', 'In Development', 'Retired') DEFAULT 'Operational'
+);
+
+-- 4. Space Flight Missions (Associative M:N Relational Entity)
+CREATE TABLE Missions (
+    mission_id INT AUTO_INCREMENT PRIMARY KEY,
+    mission_name VARCHAR(120) NOT NULL,
+    vehicle_id INT NOT NULL,
+    center_id INT NOT NULL,
+    cost_inr_cr DECIMAL(10, 2) NOT NULL CHECK (cost_inr_cr > 0),
+    payload_kg INT NOT NULL CHECK (payload_kg > 0),
+    status ENUM('Success', 'Active', 'Planned', 'Partial Failure') DEFAULT 'Planned',
+    launch_date DATE NOT NULL,
+    FOREIGN KEY (vehicle_id) REFERENCES LaunchVehicles(vehicle_id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (center_id) REFERENCES SpaceCenters(center_id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- 5. Audit & Non-Repudiation Transaction Logs
+CREATE TABLE AuditLogs (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    action_type ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    table_affected VARCHAR(50) NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    details TEXT NOT NULL
+);`;
+
+    function renderSchemaView() {
+      document.getElementById('ddl-source-view').textContent = DDL_CANONICAL_SCRIPT;
+    }
+
+    function copyDdlScript() {
+      const text = DDL_CANONICAL_SCRIPT;
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+
+      const label = document.getElementById('copy-ddl-btn-label');
+      label.textContent = 'Copied to Clipboard!';
+      setTimeout(() => label.textContent = 'Copy MySQL DDL Script', 2000);
+      showToast("DDL SQL script copied to clipboard!", "info");
+    }
+
+    /* ----------------------------------------------------
+       10. UTILITIES, DROPDOWNS & MODALS
+       ---------------------------------------------------- */
+    function populateSelectOptions() {
+      const mVehicle = document.getElementById('m-vehicle');
+      const mCenter = document.getElementById('m-center');
+
+      if (mVehicle) {
+        mVehicle.innerHTML = db.launch_vehicles.map(v => `<option value="${v.vehicle_id}">${escapeHtml(v.vehicle_name)}</option>`).join('');
+      }
+      if (mCenter) {
+        mCenter.innerHTML = db.centers.map(c => `<option value="${c.center_id}">${escapeHtml(c.center_name)}</option>`).join('');
+      }
+    }
+
+    function openModal(id) {
+      const m = document.getElementById(id);
+      if (m) {
+        m.classList.remove('hidden');
+        if (id === 'modal-mission' && !document.getElementById('mission-form-id').value) {
+          document.getElementById('form-mission').reset();
+          document.getElementById('mission-form-id').value = '';
+          document.getElementById('modal-mission-title').textContent = 'Log New Space Flight Mission';
+        }
+      }
+    }
+
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      if (m) m.classList.add('hidden');
+      if (id === 'modal-mission') {
+        document.getElementById('mission-form-id').value = '';
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+
+      const colors = {
+        success: 'bg-emerald-950/95 border-emerald-500 text-emerald-200',
+        error: 'bg-rose-950/95 border-rose-500 text-rose-200',
+        info: 'bg-space-900/95 border-orange-500 text-orange-200'
+      };
+
+      const icons = {
+        success: 'check-circle',
+        error: 'alert-triangle',
+        info: 'rocket'
+      };
+
+      toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl border backdrop-blur-md shadow-2xl text-xs transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto ${colors[type] || colors.info}`;
+      toast.innerHTML = `
+        <i data-lucide="${icons[type] || 'info'}" class="w-4 h-4 shrink-0"></i>
+        <span class="font-mono font-medium">${escapeHtml(message)}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function refreshAll() {
+      populateSelectOptions();
+      renderDashboard();
+      renderMissionsTable();
+      renderVehiclesGrid();
+      renderCentersGrid();
+      renderAllocationsTable();
+      renderSchemaView();
+    }
+
+    /* ----------------------------------------------------
+       11. BOOTSTRAP
+       ---------------------------------------------------- */
+    window.addEventListener('DOMContentLoaded', () => {
+      initDatabase();
+      refreshAll();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
